@@ -1,7 +1,8 @@
 {
   "en": {
     "button": { "play": "Play", "exit": "Exit" },
-    "menu": { "exit": "Exit Game" }
+    "menu": { "exit": "Exit Game" },
+    "greeting": "Hello {user}!"
   },
   "fr": {
     "button": { "play": "Jouer", "exit": "Quitter" },
