@@ -12,7 +12,7 @@
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
 - [Example JSON](#-example-json-configuration)
-- [Configuration via #define Macros](#-configuration-via-define-macros)
+- [Configuration via define Macros](#-configuration-via-define-macros)
 - [Custom Error Callback](#-custom-error-callback-example)
 - [Changing Locale](#-changing-locale-at-runtime)
 - [Debug Mode](#-debug-mode)
@@ -23,13 +23,13 @@
 
 ## ✨ Key Features
 
-- 🧩 **Header-only** — just drop in `Localizer.h`
-- 📄 **JSON-based translations** (powered by [`nlohmann::json`](https://github.com/nlohmann/json))
-- ⚙️ **Thread-safe** design with shared mutex locking
-- 🔄 **Live reload** via file timestamp detection
-- 🧠 **Customizable error callbacks** or built-in ANSI-color logger
-- 🪶 **Lightweight** — zero dependencies beyond `<nlohmann/json.hpp>`
-- 🎨 **Debug mode** with key highlighting and colorized console output
+- **Header-only** — simply include `Localizer.h`, no build step required  
+- **JSON-based translations** — powered by [`nlohmann::json`](https://github.com/nlohmann/json)  
+- **Thread-safe design** using `std::shared_mutex` for concurrent access  
+- **Live reload** — automatically detects and reloads modified JSON files  
+- **Customizable error handling** via user-defined callbacks or ANSI-colored logger  
+- **Lightweight** — no external dependencies beyond `<nlohmann/json.hpp>`  
+- **Debug mode** — shows translation keys and colorized debug output for development
 
 ---
 
@@ -122,7 +122,7 @@ For example, `ui.json` → keys like `ui.button.play`, `ui.greeting`.
 
 ---
 
-## 🛠️ Configuration via #define Macros
+## 🛠️ Configuration via define Macros
 
 | Macro                     | Default      | Description                                         |
 | ------------------------- | ------------ | --------------------------------------------------- |
@@ -145,7 +145,7 @@ For example, `ui.json` → keys like `ui.button.play`, `ui.greeting`.
 
 ---
 
-## 🚨 Custom Error Callback Example
+## 🪶 Custom Error Callback Example
 
 By default, `Localizer` prints errors to `std::cerr` in red.  
 If you want full control — attach your **custom error callback**.
