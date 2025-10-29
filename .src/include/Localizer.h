@@ -27,7 +27,7 @@
 
 // Version macros
 #define LOC_VERSION_MAJOR 1
-#define LOC_VERSION_MINOR 0
+#define LOC_VERSION_MINOR 1
 #define LOC_VERSION_PATCH 0
 
 #if __cplusplus < 201703L
@@ -41,14 +41,14 @@
 #endif
 
 // Standard headers
-#include <string>             ///< std::string
-#include <unordered_map>      ///< std::unordered_map
-#include <fstream>            ///< std::ifstream
-#include <iostream>           ///< std::cout, std::cerr
-#include <filesystem>         ///< std::filesystem
-#include <vector>             ///< std::vector
-#include <algorithm>          ///< std::find
-#include "json.hpp"           ///< nlohmann::json dependency
+#include <string>        ///< std::string
+#include <unordered_map> ///< std::unordered_map
+#include <fstream>       ///< std::ifstream
+#include <iostream>      ///< std::cout, std::cerr
+#include <filesystem>    ///< std::filesystem
+#include <vector>        ///< std::vector
+#include <algorithm>     ///< std::find
+#include "json.hpp"      ///< nlohmann::json dependency
 
 // Optional regex support
 #ifndef LOC_USE_REGEX
@@ -56,7 +56,7 @@
 #endif
 
 #if LOC_USE_REGEX
-#include <regex>              ///< std::regex, std::regex_replace
+#include <regex> ///< std::regex, std::regex_replace
 #pragma message("LocalizeController: using <regex> version of placeholder parser")
 #else
 #pragma message("LocalizeController: using fast non-regex placeholder parser")
@@ -67,10 +67,29 @@
 #define LOC_THREAD_SAFE 1
 #endif
 
+/*
+Cerror configuration (on/off) 0 - off (need to set callback function), 1 - on
+Example:
+
+void errorCallback(const std::string& errorMsg) {
+    std::cout << "[ERR] " + errorMsg + "\n";
+}
+LocalizeController::setErrorCallback(errorCallback);
+
+!!! Note that you need to do this, before call function loadFromDirectory();
+*/
+#ifndef LOC_CERR
+#define LOC_CERR 0
+#endif
+
+#if LOG_CERR == 0
+using ErrorCallback = std::function<void(const std::string &, int)>;
+#endif
+
 #if LOC_THREAD_SAFE
-#include <mutex>              ///< std::mutex
-#include <shared_mutex>       ///< std::shared_mutex
-#define LOC_READ_LOCK  std::shared_lock<std::shared_mutex> lock(getMutex());
+#include <mutex>        ///< std::mutex
+#include <shared_mutex> ///< std::shared_mutex
+#define LOC_READ_LOCK std::shared_lock<std::shared_mutex> lock(getMutex());
 #define LOC_WRITE_LOCK std::unique_lock<std::shared_mutex> lock(getMutex());
 #else
 #define LOC_READ_LOCK
@@ -104,11 +123,11 @@
  */
 struct DebugOptions
 {
-    bool enabled = false;                  ///< Enable debug printing.
-    bool coloredOutput = true;             ///< Enable ANSI color output.
+    bool enabled = false;                     ///< Enable debug printing.
+    bool coloredOutput = true;                ///< Enable ANSI color output.
     std::string keyColor = LOC_COLOR_DEFAULT; ///< ANSI color for key highlight.
     std::string resetColor = LOC_COLOR_RESET; ///< ANSI color reset sequence.
-    std::string prefix = "";               ///< Prefix added before each debug line.
+    std::string prefix = "";                  ///< Prefix added before each debug line.
 
     /**
      * @brief Constructs debug options.
@@ -133,11 +152,11 @@ struct DebugOptions
 };
 
 // ============================================================================
-// LocalizeController
+// Localizer
 // ============================================================================
 
 /**
- * @class LocalizeController
+ * @class Localizer
  * @brief Static class for managing all localization operations.
  *
  * @details
@@ -147,7 +166,7 @@ struct DebugOptions
  * - Handling runtime reloads and file modification detection.
  * - Performing thread-safe access to localization data.
  */
-class LocalizeController
+class Localizer
 {
 public:
     static constexpr const char *DEFAULT_LOCALE = LOC_DEFAULT_LOCALE; ///< Default locale identifier.
@@ -205,12 +224,23 @@ private:
     inline static std::string currentLocale = DEFAULT_LOCALE; ///< Currently selected locale.
     inline static std::unordered_map<std::string,
                                      std::unordered_map<std::string, std::string>>
-        translations; ///< Language code → (key → string) map.
-    inline static std::vector<std::filesystem::path> jsons; ///< Loaded JSON paths.
+        translations;                                                                              ///< Language code → (key → string) map.
+    inline static std::vector<std::filesystem::path> jsons;                                        ///< Loaded JSON paths.
     inline static std::unordered_map<std::string, std::filesystem::file_time_type> fileTimestamps; ///< File timestamps.
-    inline static DebugOptions debugOptions; ///< Current debug configuration.
+    inline static DebugOptions debugOptions;                                                       ///< Current debug configuration.
+#if LOG_CERR == 0
+    inline static ErrorCallback errorCallback;
+#endif
 
 public:
+#if LOG_CERR == 0
+    static void setErrorCallback(ErrorCallback cb)
+    {
+        LOC_WRITE_LOCK
+        errorCallback = std::move(cb);
+    }
+#endif
+
     /**
      * @brief Loads translation data from a single JSON file.
      * @param path Path to the JSON file.
@@ -223,7 +253,14 @@ public:
 
         std::ifstream file(path);
         if (!file.is_open())
-            throw std::runtime_error("Cannot open language file: " + path);
+        {
+#if LOG_CERR == 1
+            std::cerr << "Cannot open language file: " + path;
+#else
+            if (errorCallback)
+                errorCallback("Cannot open language file: " + path, 0);
+#endif
+        }
 
         json data;
         file >> data;
@@ -265,10 +302,18 @@ public:
         {
             if (entry.is_regular_file() && entry.path().extension() == ".json")
             {
-                try { loadFromFile(entry.path().string()); }
+                try
+                {
+                    loadFromFile(entry.path().string());
+                }
                 catch (const std::exception &ex)
                 {
-                    std::cerr << "⚠️ Failed to load " << entry.path() << ": " << ex.what() << "\n";
+#if LOG_CERR == 1
+                    std::cerr << "[!] Failed to load " << entry.path() << ": " << ex.what() << "\n";
+#else
+                    if (errorCallback)
+                        errorCallback("[!] Failed to load " + entry.path().string() + ": " + ex.what() + "\n", 1);
+#endif
                 }
             }
         };
@@ -297,10 +342,18 @@ public:
 
         for (const auto &json : jsons)
         {
-            try { loadFromFile(json.string()); }
+            try
+            {
+                loadFromFile(json.string());
+            }
             catch (const std::exception &ex)
             {
-                std::cerr << "⚠️ Failed to reload " << json << ": " << ex.what() << "\n";
+#if LOG_CERR == 1
+                std::cerr << "[!] Failed to reload " << json << ": " << ex.what() << "\n";
+#else
+                if (errorCallback)
+                    errorCallback("[!] Failed to reload " + json.string() + ": " + ex.what() + "\n", 2);
+#endif
             }
         }
     }
@@ -469,7 +522,7 @@ public:
 class LocalizedString
 {
 private:
-    std::string key; ///< Localization key.
+    std::string key;                                     ///< Localization key.
     std::unordered_map<std::string, std::string> params; ///< Placeholder substitutions.
 
     /**
@@ -545,7 +598,7 @@ public:
      */
     [[nodiscard]] std::string str() const
     {
-        std::string base = LocalizeController::translate(key);
+        std::string base = Localizer::translate(key);
         return params.empty() ? base : applyPlaceholders(base, params);
     }
 

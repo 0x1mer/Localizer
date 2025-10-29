@@ -1,5 +1,8 @@
 {
   "en": {
+    "screen": {
+      "welcome": "Welcome, {username}! Your score is {score}."
+    },
     "welcome": "Welcome, {username}! Your score is {score}."
   },
   "fr": {

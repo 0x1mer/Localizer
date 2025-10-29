@@ -3,10 +3,20 @@
 #include <chrono>
 #include <Localizer.h>
 
+void errorCallback(const std::string& errorMsg, int errorCode) {
+    std::cout
+        << "\x1b[31m[ERR] "
+        << errorMsg
+        << " [ERROR_CODE: "
+        << errorCode
+        << "]\x1b[0m\n";
+}
+
 /**
  * @brief Demonstration program for the LocalizeController library.
  *
  * This example shows how to:
+ * - Set callback function to intersect errors
  * - Load JSON translation files
  * - Retrieve localized strings
  * - Use parameter substitution
@@ -21,18 +31,19 @@ int main()
     try
     {
         std::cout << "===============================\n";
-        std::cout << " 🈶 LocalizeController Showcase\n";
+        std::cout << " 🈶 Localizer Showcase\n";
         std::cout << "===============================\n\n";
 
         // 1️⃣ Load translation files
         std::cout << "📂 Loading translations...\n";
-        LocalizeController::loadFromDirectory("C:\\Users\\Oximer\\Documents\\VSCodeProjects\\LocalizedString\\langs");
-        LocalizeController::setDebugMode(false);
-        LocalizeController::printStats();
+        Localizer::setErrorCallback(errorCallback);
+        Localizer::loadFromDirectory("C:\\Users\\Oximer\\Documents\\VSCodeProjects\\LocalizedString\\langs");
+        Localizer::setDebugMode(false);
+        Localizer::printStats();
 
         // 2️⃣ Set the current locale
         std::cout << "\n🌐 Setting locale to 'en'...\n";
-        if (!LocalizeController::setLocale("en"))
+        if (!Localizer::setLocale("en"))
         {
             std::cerr << "❌ Locale 'en' not found!\n";
             return 1;
@@ -46,7 +57,7 @@ int main()
 
         // 4️⃣ Locale switching
         std::cout << "\n=== Locale switching ===\n";
-        if (LocalizeController::setLocale("fr"))
+        if (Localizer::setLocale("fr"))
         {
             std::cout << L("ui.button.play") << "\n";
             std::cout << L("ui.menu.exit") << "\n";
@@ -54,7 +65,7 @@ int main()
         else
         {
             std::cout << "⚠️  Locale 'fr' not found, staying on 'en'.\n";
-            LocalizeController::setLocale("en");
+            Localizer::setLocale("en");
         }
 
         // 5️⃣ Placeholder substitution
@@ -68,9 +79,9 @@ int main()
         // 6️⃣ Key existence check
         std::cout << "\n=== Key existence check ===\n";
         std::cout << "Has 'ui.button.play'? "
-                  << (LocalizeController::hasKey("ui.button.play") ? "✅" : "❌") << "\n";
+                  << (Localizer::hasKey("ui.button.play") ? "✅" : "❌") << "\n";
         std::cout << "Has 'ui.random.thing'? "
-                  << (LocalizeController::hasKey("ui.random.thing") ? "✅" : "❌") << "\n";
+                  << (Localizer::hasKey("ui.random.thing") ? "✅" : "❌") << "\n";
 
         // 7️⃣ Debug mode (colored key visualization)
         std::cout << "\n=== Debug mode ===\n";
@@ -79,7 +90,7 @@ int main()
         opts.coloredOutput = true;
         opts.keyColor = "\x1b[36m"; // cyan
         opts.prefix = "[DBG] ";
-        LocalizeController::setDebugOptions(opts);
+        Localizer::setDebugOptions(opts);
 
         std::cout << L("ui.button.play") << "\n";
         std::cout << L("ui.menu.exit") << "\n";
@@ -92,7 +103,7 @@ int main()
         for (int i = 1; i <= 5; ++i)
         {
             std::this_thread::sleep_for(2s);
-            LocalizeController::checkForJsonChanges();
+            Localizer::checkForJsonChanges();
             std::cout << "Check " << i << ": " << L("ui.button.play") << "\n";
         }
 
