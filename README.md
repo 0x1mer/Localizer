@@ -12,7 +12,7 @@
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
 - [Example JSON](#-example-json-configuration)
-- [Configuration Macros](#-configuration-via-define-macros)
+- [Configuration via #define Macros](#-configuration-via-define-macros)
 - [Custom Error Callback](#-custom-error-callback-example)
 - [Changing Locale](#-changing-locale-at-runtime)
 - [Debug Mode](#-debug-mode)
