@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Build with GCC 14.2.0",
+            "command": "C:/Users/Oximer/Documents/c++ compilers/winlibs-x86_64-posix-seh-gcc-14.2.0-llvm-19.1.7-mingw-w64ucrt-12.0.0-r3/mingw64/bin/g++.exe",
+            "args": [
+                "-g3",
+                "-std=c++20",
+                "-O2",
+                "-D_DEBUG",
+                "-static",
+                "-static-libgcc",
+                "-static-libstdc++",
+                "-I${workspaceFolder}\\.src\\include",
+                "${workspaceFolder}\\.src\\main.cpp",
+                "-o",
+                "${workspaceFolder}\\build\\build.exe",
+                "-fdiagnostics-color=always",
+                "-lgdi32",
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "compiler: GCC 14.2.0"
+        }
+    ]
+}

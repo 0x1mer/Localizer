@@ -1,0 +1,10 @@
+{
+  "en": {
+    "button": { "play": "Play", "exit": "Exit" },
+    "menu": { "exit": "Exit Game" }
+  },
+  "fr": {
+    "button": { "play": "Jouer", "exit": "Quitter" },
+    "menu": { "exit": "Quitter le jeu" }
+  }
+}

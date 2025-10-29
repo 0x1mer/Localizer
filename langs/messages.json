@@ -1,0 +1,8 @@
+{
+  "en": {
+    "welcome": "Welcome, {username}! Your score is {score}."
+  },
+  "fr": {
+    "welcome": "Bienvenue, {username}! Votre score est {score}."
+  }
+}
