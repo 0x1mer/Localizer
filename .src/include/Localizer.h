@@ -5,7 +5,7 @@
 /**
  * @file Localizer.h
  * @brief Header-only localization library for C++ applications.
- * @version 1.0.0
+ * @version 1.1.1
  * @author 0x1mer
  * @license MIT
  *
@@ -28,7 +28,7 @@
 // Version macros
 #define LOC_VERSION_MAJOR 1
 #define LOC_VERSION_MINOR 1
-#define LOC_VERSION_PATCH 0
+#define LOC_VERSION_PATCH 1
 
 #if __cplusplus < 201703L
 #error "LocalizeController requires C++17 or higher"
@@ -67,23 +67,71 @@
 #define LOC_THREAD_SAFE 1
 #endif
 
-/*
-Cerror configuration (on/off) 0 - off (need to set callback function), 1 - on
-Example:
-
-void errorCallback(const std::string& errorMsg) {
-    std::cout << "[ERR] " + errorMsg + "\n";
-}
-LocalizeController::setErrorCallback(errorCallback);
-
-!!! Note that you need to do this, before call function loadFromDirectory();
-*/
+/**
+ * @section Error Handling Configuration
+ *
+ * @brief Controls how error reporting is handled within LocalizeController.
+ *
+ * Configuration options:
+ * ----------------------
+ * - **LOC_CERR = 1** — Use standard error output (`std::cerr`) for error messages.
+ * - **LOC_CERR = 0** — Disable automatic error printing; instead, a custom callback must be set.
+ *
+ * @note If LOC_CERR is set to 0, you must provide a callback function
+ *       before calling `LocalizeController::loadFromDirectory()`.
+ *
+ * Example:
+ * --------
+ * @code
+ * void onError(const std::string& message, int code) {
+ *     std::cout << "\x1b[31m[ERR] " << message
+ *               << " [CODE: " << code << "]\x1b[0m\n";
+ * }
+ *
+ * LocalizeController::setErrorCallback(onError);
+ * @endcode
+ */
 #ifndef LOC_CERR
 #define LOC_CERR 0
 #endif
 
-#if LOG_CERR == 0
-using ErrorCallback = std::function<void(const std::string &, int)>;
+#if LOC_CERR == 0
+#include <functional>
+#include <mutex>
+#include <iostream>
+
+/**
+ * @typedef ErrorCallback
+ * @brief Customizable error reporting callback.
+ *        Signature: void(const std::string& message, int code)
+ */
+using ErrorCallback = std::function<void(const std::string&, int)>;
+
+/**
+ * @brief Default error callback used when no custom callback is provided.
+ * Prints errors in red to the console with ANSI escape codes.
+ */
+inline static ErrorCallback DefaultErrorCallback = [](const std::string& msg, int code)
+{
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lock(mtx);
+    std::cerr << "\x1b[31m[ERR] " << msg
+              << " [CODE: " << code << "]\x1b[0m\n";
+};
+
+/**
+ * @brief Macro for raising an error through either user callback or default.
+ */
+#define LOC_RAISE_ERROR(msg, code)                                  \
+    do {                                                            \
+        if (errorCallback) errorCallback((msg), (code));            \
+        else DefaultErrorCallback((msg), (code));                   \
+    } while (0)
+#else
+#define LOC_RAISE_ERROR(msg, code)                                  \
+    do {                                                            \
+        std::cerr << "[ERR] " << (msg) << " [CODE: " << (code) << "]\n"; \
+    } while (0)
 #endif
 
 #if LOC_THREAD_SAFE
@@ -228,12 +276,12 @@ private:
     inline static std::vector<std::filesystem::path> jsons;                                        ///< Loaded JSON paths.
     inline static std::unordered_map<std::string, std::filesystem::file_time_type> fileTimestamps; ///< File timestamps.
     inline static DebugOptions debugOptions;                                                       ///< Current debug configuration.
-#if LOG_CERR == 0
-    inline static ErrorCallback errorCallback;
+#if LOC_CERR == 0
+    inline static ErrorCallback errorCallback = nullptr;
 #endif
 
 public:
-#if LOG_CERR == 0
+#if LOC_CERR == 0
     static void setErrorCallback(ErrorCallback cb)
     {
         LOC_WRITE_LOCK
@@ -254,12 +302,7 @@ public:
         std::ifstream file(path);
         if (!file.is_open())
         {
-#if LOG_CERR == 1
-            std::cerr << "Cannot open language file: " + path;
-#else
-            if (errorCallback)
-                errorCallback("Cannot open language file: " + path, 0);
-#endif
+            LOC_RAISE_ERROR("Cannot open language file: " + path, 0);
         }
 
         json data;
@@ -308,12 +351,7 @@ public:
                 }
                 catch (const std::exception &ex)
                 {
-#if LOG_CERR == 1
-                    std::cerr << "[!] Failed to load " << entry.path() << ": " << ex.what() << "\n";
-#else
-                    if (errorCallback)
-                        errorCallback("[!] Failed to load " + entry.path().string() + ": " + ex.what() + "\n", 1);
-#endif
+                    LOC_RAISE_ERROR("[!] Failed to load " + entry.path().string() + ": " + ex.what(), 1);
                 }
             }
         };
@@ -348,12 +386,7 @@ public:
             }
             catch (const std::exception &ex)
             {
-#if LOG_CERR == 1
-                std::cerr << "[!] Failed to reload " << json << ": " << ex.what() << "\n";
-#else
-                if (errorCallback)
-                    errorCallback("[!] Failed to reload " + json.string() + ": " + ex.what() + "\n", 2);
-#endif
+                LOC_RAISE_ERROR("[!] Failed to reload " + json.string() + ": " + ex.what(), 2);
             }
         }
     }
