@@ -37,13 +37,13 @@
 
 1. **Add the headers to your project:**
    ```
-   /include/LocalizeController.h
+   /include/Localizer.h
    /include/json.hpp              // nlohmann::json
    ```
 
 2. **Include it in your code:**
    ```cpp
-   #include <LocalizeController.h>
+   #include <Localizer.h>
    ```
 
 3. *(Optional)* Add include paths in CMake or your IDE:
@@ -58,7 +58,7 @@
 
 ```cpp
 #include <iostream>
-#include "LocalizeController.h"
+#include "Localizer.h"
 
 int main() {
     // Load all JSON localization files from a folder
@@ -140,7 +140,7 @@ For example, `ui.json` → keys like `ui.button.play`, `ui.greeting`.
 #define LOC_THREAD_SAFE 1
 #define LOC_USE_REGEX 0
 
-#include "LocalizeController.h"
+#include "Localizer.h"
 ```
 
 ---
@@ -155,7 +155,7 @@ If you want full control — attach your **custom error callback**.
 
 ```cpp
 #define LOC_CERR 0
-#include "LocalizeController.h"
+#include "Localizer.h"
 
 void onError(const std::string& msg, int code) {
     std::cout << "\x1b[31m[Error " << code << "] " << msg << "\x1b[0m\n";
